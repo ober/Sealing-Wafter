@@ -1,7 +1,7 @@
 /*
  * Sealing Wafter OpenBSD LKM: 0.1.4
  *
- * Copyright (c) 2005-2006 Ober J. Heim  <ober@LinBSD.org>
+ * Copyright (c) 2005-2010 Jaime Fournier <ober@LinBSD.org>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
