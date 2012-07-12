@@ -36,7 +36,7 @@
  *    (There are probably cases where we are ignoring valid RST)
  * 3. Cleaned up the code to reduce the code paths.
  * 4. Added more tests for NMAP packets. Used p0f rulesets
- *    as well as testing.   
+ *    as well as testing.
  *
  * Goals of Sealing Wafter:
  * 1. To reduce OS detection based on well known fingerprints
@@ -48,7 +48,7 @@
  *
  * What Sealing Wafter currently provides:
  * 1. Hide from Nmap Syn/Xmas/Null scans, as well as the specific
- *    fingerprinting packets. 
+ *    fingerprinting packets.
  * 2. Ability to see what your stack is receiving without the need
  *    to drop your network device into promisc mode.
  * 3. Complete control over rules that you can load on the fly to
@@ -219,7 +219,10 @@ print_ip_header(struct ip * ip)
 #define IP_MF 0x2000		/* more fragments flag */
 #define IP_OFFMASK 0x1fff	/* mask for fragmenting bits */
 
-	printf(" ip-<src:%s dst:%s hl:%u v:%u tos:%u len:%u id:%u off:%u ttl:%u p:%u sum:%u> ", inet_ntoa(ip->ip_src), inet_ntoa(ip->ip_dst), ip->ip_hl, ip->ip_v, ip->ip_tos, ntohs(ip->ip_len), ip->ip_id, ip->ip_off, ip->ip_ttl, ip->ip_p, ip->ip_sum);
+	char *src, *dst;
+	src = inet_ntoa(ip->ip_src);
+	dst = inet_ntoa(ip->ip_dst);
+	printf(" ip-<src:%s dst:%s hl:%u v:%u tos:%u len:%u id:%u off:%u ttl:%u p:%u sum:%u> ", src, dst, ip->ip_hl, ip->ip_v, ip->ip_tos, ntohs(ip->ip_len), ip->ip_id, ip->ip_off, ip->ip_ttl, ip->ip_p, ip->ip_sum);
 
 	if (ntohs(ip->ip_off) & IP_RF)
 		printf("IP_RF:");
@@ -250,8 +253,8 @@ os_detect(struct ip * ip, struct tcphdr * th)
 	}
 
 	/*
-	* OpenBSD 
-	* Sometimes OpenBSD has DF set, othertimes it does not 
+	* OpenBSD
+	* Sometimes OpenBSD has DF set, othertimes it does not
 	*/
 	if ((ntohs(th->th_win) == 16384) && (ip->ip_ttl <= 64) && (ntohs(ip->ip_len) == 64)){
 		printf(" OpenBSD 3.0-3.8 ");
@@ -260,8 +263,8 @@ os_detect(struct ip * ip, struct tcphdr * th)
 	}
 
 	/*
-	 * MacOSX 
-	 * ip_len has been noted at 60, and 64 
+	 * MacOSX
+	 * ip_len has been noted at 60, and 64
 	 */
 	if ((ntohs(th->th_win) == 65535) && (ntohs(ip->ip_off) & IP_DF) && (ip->ip_ttl <= 64) && (ntohs(ip->ip_len) == 60)){
 		printf(" FreeBSD:4.7-5.2 (or MacOS X 10.2-10.3) (1) ");
@@ -270,7 +273,7 @@ os_detect(struct ip * ip, struct tcphdr * th)
 	}
 
 	/*
-	 * Windows XP SP2 
+	 * Windows XP SP2
 	 */
 	if ((ntohs(th->th_win) == 16384) && (ntohs(ip->ip_off) & IP_DF) && (ip->ip_ttl <= 128) && (ntohs(ip->ip_len) == 48)){
 		printf(" Windows:2000 SP2+, XP SP1 (seldom 98 4.10.2222) ");
@@ -281,31 +284,31 @@ os_detect(struct ip * ip, struct tcphdr * th)
 	/*
          * NetBSD 3.0 i386 32768:64:1:64:
 	 */
-	
+
 	if ((ntohs(th->th_win) == 32768) && (ntohs(ip->ip_off) & IP_DF) && (ip->ip_ttl <= 64) && (ntohs(ip->ip_len) == 64)){
 		printf(" NetBSD 3.0\n");
 		return;
 	}
-	
-	/* 
-	 * Windows XP Pro SP1, 2000 SP3 [Tiscali Denmark] 
+
+	/*
+	 * Windows XP Pro SP1, 2000 SP3 [Tiscali Denmark]
 	 */
 	if ((ntohs(th->th_win) == 64240) && (ntohs(ip->ip_off) & IP_DF) && (ip->ip_ttl <= 128) && (ntohs(ip->ip_len) == 48)){
 		printf(" Windows XP Pro SP1, 2000 SP3 [Tiscali Denmark] \n");
 		return;
 	}
 
-	/* 
-         * Windows 2000 SP4, XP SP1 
+	/*
+         * Windows 2000 SP4, XP SP1
 	 */
-   	
+
 	if ((ntohs(th->th_win) == 65535) && (ntohs(ip->ip_off) & IP_DF) && (ip->ip_ttl <= 128) && (ntohs(ip->ip_len) == 48)){
 		printf(" Windows XP Pro SP1, 2000 SP3 [Tiscali Denmark] \n");
 		return;
 	}
 
-	/* 
-	 * Red Hat Enterprise Linux WS release 3 (Taroon Update 6) 
+	/*
+	 * Red Hat Enterprise Linux WS release 3 (Taroon Update 6)
 	 */
 	if ((ntohs(th->th_win) == 53760) && (ntohs(ip->ip_off) & IP_DF) && (ip->ip_ttl <= 32) && (ntohs(ip->ip_len) == 48)){
 		printf(" Red Hat Enterprise Linux WS release 3 (Taroon Update 6) \n");
@@ -313,17 +316,17 @@ os_detect(struct ip * ip, struct tcphdr * th)
 	}
 
 	/*
-	 * Plan 9 
-	 * 65535:228:0:48:M1460,W1,N:.:?:? 
+	 * Plan 9
+	 * 65535:228:0:48:M1460,W1,N:.:?:?
 	 */
 	if ((ntohs(th->th_win) == 65535) && (!(ntohs(ip->ip_off) & IP_DF)) && (ip->ip_ttl <= 228) && (ntohs(ip->ip_len) == 48)){
 		printf(" Plan 9 (4th Edition)\n");
 		return;
 	}
 
-	/* 
-	 *  FreeBSD 6 
-	 *  65535:228:0:48:M1460,W1,N:.:?:? 
+	/*
+	 *  FreeBSD 6
+	 *  65535:228:0:48:M1460,W1,N:.:?:?
 	 */
 
 	if ((ntohs(th->th_win) == 65535) && (ntohs(ip->ip_off) & IP_DF) && (ip->ip_ttl <= 44) && (ntohs(ip->ip_len) == 64)){
@@ -461,9 +464,9 @@ new_tcp_input(struct mbuf * m,...)
 				printf("\n");
 			}
 
-		}else{ 
-			/* 
-			 * NOT NMAP/TCPKILL/SSH SCAN 
+		}else{
+			/*
+			 * NOT NMAP/TCPKILL/SSH SCAN
 			 */
 
 			 if (th->th_flags == TH_SYN) {
@@ -473,8 +476,8 @@ new_tcp_input(struct mbuf * m,...)
 				os_detect(ip, th);
 			}
 
-			/* 
-			 * tcpkill sets just RST, not RST,ACK 
+			/*
+			 * tcpkill sets just RST, not RST,ACK
 			 */
 			if (th->th_flags == TH_RST) {
 				printf("TCPKILL RST on:%s", ifnp->if_xname);
@@ -486,24 +489,24 @@ new_tcp_input(struct mbuf * m,...)
 				printf("\n");
 			}
 
-			/* 
-		         * Real RST's as seen so far set ACK as well 
+			/*
+		         * Real RST's as seen so far set ACK as well
 			 */
 			if ((th->th_flags & TH_RST) && (th->th_flags & TH_ACK)) {
 				printf("RST on:%s", ifnp->if_xname);
 				print_ip_header(ip);
 				print_tcp_header(th);
-				/*	
+				/*
 				 * tcpdrop(th);
 				 */
 				printf("\n");
 			}
 
 		}
-	}			/*	
+	}			/*
 				 * mbuf head
 				 */
-	
+
 	(*old_tcp_input) (m, iphlen);
 
 	return;
